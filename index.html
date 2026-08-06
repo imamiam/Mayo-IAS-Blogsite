@@ -177,9 +177,25 @@
     }
 
     function loadBlogTeaser() {
-      const posts = JSON.parse(localStorage.getItem('blogPosts_v4')) || [];
-      const publishedPosts = posts.filter(p => p.status !== 'draft' && p.status !== 'archived');
-      const teaserContainer = document.getElementById('home-blog-teaser');
+
+    const defaultPosts = [
+        {
+            id: 1786029996753,
+            title: "Principles over Speed",
+            date: "August 6, 2026",
+            tags: "Information Assurance and Security",
+            status: "published",
+            content: `<p>A team of three university students built a mobile and web application in under 72 hours for a weekend hackathon. Within a month, over a dozen campus organizations adopted the tool, exposing student names, phone numbers, GCash screenshots, ID photos, and private chats to severe vulnerabilities.</p>`
+        }
+    ];
+
+    let posts = JSON.parse(localStorage.getItem('blogPosts_v4'));
+
+    if (!posts || posts.length === 0) {
+        posts = defaultPosts;
+    }
+
+    const publishedPosts = posts.filter(p => p.status !== 'draft' && p.status !== 'archived');
 
       if (publishedPosts.length > 0) {
         publishedPosts.sort((a, b) => b.id - a.id);
