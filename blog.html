@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blog - Mayo's Blogsite</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav>
+    <img src="logo.png" alt="Blog Logo" class="nav-logo">
+    <a href="index.html">Home</a>
+    <a href="blog.html" class="active">Blog</a>
+    <a href="profile.html">About Me</a>
+    <a href="portfolio.html">Portfolio</a>
+    <a href="login.html" id="auth-btn" class="logout-btn">Admin Login</a>
+  </nav>
+
+  <main class="blog-page-wrapper">
+    
+    <div class="container blog-header-container">
+      <h2 style="font-size: 3rem; margin-top: 0; border: none;">Blog Posts</h2>
+      <p class="meta"><em>My opinions on academic issues, creative works, and everything else in between!</em></p>
+      <hr>
+
+      <div id="admin-panel" style="display: none; margin-top: 1.5rem;">
+        <button onclick="openPostModal()" class="home-read-more-btn" style="border:none; cursor:pointer; font-family: 'Segoe UI', sans-serif;">+ Create New Post</button>
+      </div>
+    </div>
+
+    <div id="blog-feed" class="dynamic-blog-grid">
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <div class="footer-left">
+        <p>Instructor: Lee Angela Yu Garnica</p>
+        <p>Information Assurance and Security</p>
+      </div>
+      <div class="footer-right">
+        <p>&copy; 2026 Juliana Isabel Mayo</p>
+        <p>A.Y. 2025–2026 | Father Saturnino Urios University</p>
+      </div>
+    </div>
+  </footer>
+
+  <div id="postModal" class="modal-overlay">
+    <div class="modal-card cms-modal">
+      <h2 id="modalTitle">Draft New Post</h2>
+      
+      <input type="text" id="postTitle" placeholder="Post Title" required>
+      
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="postTags" placeholder="Category / Tags (e.g., Security)" style="flex: 1;">
+        <select id="postStatus" style="width: auto; margin: 8px 0 12px 0; border: 2px solid #f2cdd8; border-radius: 8px; color: #4a2e35; font-family: 'Segoe UI'; font-size: 1rem; outline: none;">
+          <option value="published">Published</option>
+          <option value="draft">Draft (Hidden)</option>
+          <option value="archived">Archived (Hidden)</option>
+        </select>
+      </div>
+      
+      <div class="editor-container">
+        <div class="editor-toolbar" id="toolbar">
+          <button type="button" data-cmd="bold" onclick="formatDoc('bold')" title="Bold"><b>B</b></button>
+          <button type="button" data-cmd="italic" onclick="formatDoc('italic')" title="Italic"><i>I</i></button>
+          <button type="button" data-cmd="underline" onclick="formatDoc('underline')" title="Underline"><u>U</u></button>
+          <span class="divider"></span>
+          <button type="button" data-cmd="justifyLeft" onclick="formatDoc('justifyLeft')" title="Align Left">&#x21E4;</button>
+          <button type="button" data-cmd="justifyCenter" onclick="formatDoc('justifyCenter')" title="Align Center">&#x2194;</button>
+          <button type="button" data-cmd="justifyRight" onclick="formatDoc('justifyRight')" title="Align Right">&#x21E5;</button>
+          <button type="button" data-cmd="justifyFull" onclick="formatDoc('justifyFull')" title="Justify">&#x2261;</button>
+          <span class="divider"></span>
+          <button type="button" onclick="formatDoc('formatBlock', 'H1')" title="Heading 1">H1</button>
+          <button type="button" onclick="formatDoc('formatBlock', 'H2')" title="Heading 2">H2</button>
+          <button type="button" onclick="formatDoc('formatBlock', 'H3')" title="Heading 3">H3</button>
+          <button type="button" onclick="formatDoc('formatBlock', 'P')" title="Paragraph">P</button>
+          <span class="divider"></span>
+          <button type="button" data-cmd="insertUnorderedList" onclick="formatDoc('insertUnorderedList')" title="Bullet List">•</button>
+          <button type="button" data-cmd="insertOrderedList" onclick="formatDoc('insertOrderedList')" title="Number List">1.</button>
+        </div>
+        <div id="postContentEditor" contenteditable="true" class="rich-text-editor" placeholder="Type your post here..."></div>
+      </div>
+      
+      <div class="modal-actions">
+        <button onclick="savePost()" class="modal-btn">Save Post</button>
+        <button onclick="closePostModal()" class="modal-btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="deleteModal" class="modal-overlay">
+    <div class="modal-card">
+      <h2>Are you sure?</h2>
+      <p>Are you sure you want to delete this post?</p>
+      <div class="modal-actions">
+        <button onclick="confirmDelete()" class="modal-btn">Delete</button>
+        <button onclick="closeDeleteModal()" class="modal-btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const authBtn = document.getElementById('auth-btn');
+    const adminPanel = document.getElementById('admin-panel');
+
+    if (isLoggedIn) {
+      authBtn.textContent = 'Logout';
+      authBtn.removeAttribute('href');
+      authBtn.onclick = function() {
+        localStorage.removeItem('isLoggedIn');
+        window.location.reload();
+      };
+      adminPanel.style.display = 'block'; 
+    }
+
+    let posts = JSON.parse(localStorage.getItem('blogPosts_v4')) || [];
+    let editingPostId = null;
+    let deletingPostId = null;
+
+    function renderPosts() {
+      const feed = document.getElementById('blog-feed');
+      feed.innerHTML = ''; 
+
+      const postsToDisplay = isLoggedIn ? posts : posts.filter(p => p.status === 'published');
+
+      if (postsToDisplay.length === 0) {
+        feed.innerHTML = '<p style="text-align:center; color:#8c5a68; font-style:italic; margin-top:2rem;">No posts published yet. Check back soon!</p>';
+        return;
+      }
+
+      postsToDisplay.sort((a, b) => b.id - a.id).forEach(post => {
+        let statusBadge = '';
+        if (post.status === 'draft') {
+          statusBadge = `<span class="blog-tag" style="background-color: #c94a4a; color: white;">DRAFT (Hidden)</span>`;
+        } else if (post.status === 'archived') {
+          statusBadge = `<span class="blog-tag" style="background-color: #8c5a68; color: white;">ARCHIVED (Hidden)</span>`;
+        }
+
+        const adminControls = isLoggedIn ? `
+          <button class="edit-btn" onclick="openPostModal(${post.id})">Edit Post</button>
+          <button class="delete-btn" onclick="promptDelete(${post.id})">Delete Post</button>
+        ` : '';
+
+        feed.innerHTML += `
+          <div class="container dynamic-post-card">
+            <div class="dynamic-post-content">
+              ${statusBadge}
+              <span class="blog-tag">${post.tags || 'Journal'}</span>
+              <h1>${post.title}</h1>
+              <p class="meta"><em>By Juliana Isabel Mayo | ${post.date}</em></p>
+              <hr>
+              <div class="article-text">${post.content}</div>
+              
+              <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+                ${adminControls}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    const editor = document.getElementById('postContentEditor');
+    const toolbarButtons = document.querySelectorAll('.editor-toolbar button[data-cmd]');
+
+    function formatDoc(cmd, value=null) {
+      document.execCommand(cmd, false, value);
+      editor.focus();
+      updateToolbarActiveStates();
+    }
+
+    function updateToolbarActiveStates() {
+      toolbarButtons.forEach(btn => {
+        const cmd = btn.getAttribute('data-cmd');
+        if (cmd && document.queryCommandState(cmd)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    editor.addEventListener('keyup', updateToolbarActiveStates);
+    editor.addEventListener('mouseup', updateToolbarActiveStates);
+    editor.addEventListener('click', updateToolbarActiveStates);
+
+    editor.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      editor.style.backgroundColor = '#fce7f3';
+    });
+
+    editor.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      editor.style.backgroundColor = '#ffffff';
+    });
+
+    editor.addEventListener('drop', function(e) {
+      e.preventDefault();
+      editor.style.backgroundColor = '#ffffff';
+      
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            const base64Data = event.target.result;
+            document.execCommand('insertImage', false, base64Data);
+            const imgs = editor.querySelectorAll('img');
+            imgs.forEach(img => {
+              img.style.maxWidth = '100%';
+              img.style.borderRadius = '8px';
+              img.style.margin = '1rem 0';
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    });
+
+    function openPostModal(id = null) {
+      document.getElementById('postModal').style.display = 'flex';
+      
+      if (id) {
+        editingPostId = id;
+        document.getElementById('modalTitle').innerText = "Edit Post";
+        const post = posts.find(p => p.id === id);
+        document.getElementById('postTitle').value = post.title;
+        document.getElementById('postTags').value = post.tags;
+        document.getElementById('postStatus').value = post.status;
+        editor.innerHTML = post.content;
+      } else {
+        editingPostId = null;
+        document.getElementById('modalTitle').innerText = "Draft New Post";
+        document.getElementById('postTitle').value = '';
+        document.getElementById('postTags').value = '';
+        document.getElementById('postStatus').value = 'published';
+        editor.innerHTML = ''; 
+      }
+      editor.focus();
+    }
+
+    function closePostModal() {
+      document.getElementById('postModal').style.display = 'none';
+      editingPostId = null;
+    }
+
+    function promptDelete(id) {
+      deletingPostId = id;
+      document.getElementById('deleteModal').style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').style.display = 'none';
+      deletingPostId = null;
+    }
+
+    function confirmDelete() {
+      if (deletingPostId) {
+        posts = posts.filter(post => post.id !== deletingPostId);
+        localStorage.setItem('blogPosts_v4', JSON.stringify(posts));
+        closeDeleteModal();
+        renderPosts();
+      }
+    }
+
+    function savePost() {
+      const title = document.getElementById('postTitle').value;
+      const tags = document.getElementById('postTags').value;
+      const status = document.getElementById('postStatus').value;
+      let content = editor.innerHTML.trim();
+
+      if(!title || content === '' || content === '<br>') {
+        alert("Title and Content are required!");
+        return;
+      }
+
+      if (!content.startsWith('<p>') && !content.startsWith('<h') && !content.startsWith('<img')) {
+        content = `<p>${content}</p>`;
+      }
+
+      if (editingPostId) {
+        const postIndex = posts.findIndex(p => p.id === editingPostId);
+        if (postIndex > -1) {
+          posts[postIndex].title = title;
+          posts[postIndex].tags = tags;
+          posts[postIndex].status = status;
+          posts[postIndex].content = content;
+        }
+      } else {
+        const newPost = {
+          id: Date.now(),
+          title: title,
+          date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+          tags: tags,
+          status: status,
+          content: content
+        };
+        posts.push(newPost);
+      }
+
+      localStorage.setItem('blogPosts_v4', JSON.stringify(posts));
+      closePostModal();
+      renderPosts();
+    }
+
+    renderPosts();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Home - Mayo's Blogsite</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav>
+    <img src="logo.png" alt="Blog Logo" class="nav-logo">
+    <a href="index.html" class="active">Home</a>
+    <a href="blog.html">Blog</a>
+    <a href="profile.html">About Me</a>
+    <a href="portfolio.html">Portfolio</a>
+    <a href="login.html" id="auth-btn" class="logout-btn">Admin Login</a>
+  </nav>
+
+  <main class="home-main-wrapper">
+    
+    <section class="hero-section">
+      <div class="hero-content">
+        <h1>Welcome to Mayo's Blog!</h1>
+        <p class="hero-subtitle">Welcome to my blog! I will be posting academic, creative works and everything else in between here!</p>
+      </div>
+    </section>
+
+    <!-- Blog Teaser -->
+<section class="container home-essay-container" id="home-blog-teaser">
+</section>
+
+<!-- Profile + J&J -->
+<div class="home-lower-row">
+
+    <!-- Profile -->
+    <section class="container profile-preview-container">
+
+        <div class="teaser-profile">
+
+            <a href="https://github.com/imamiam"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="mini-polaroid-stack"
+               style="display:block;text-decoration:none;">
+
+                <img id="teaser-avatar"
+                     src="mayo2.jpg"
+                     alt="Juliana Isabel Mayo"
+                     class="mini-polaroid-img">
+
+            </a>
+
+            <div id="teaser-labels-container">
+                <h3>Juliana Isabel Mayo</h3>
+                <p class="teaser-role">BSIT-32, FSUU</p>
+            </div>
+
+            <a href="profile.html"
+               class="teaser-btn">
+                View Full Profile →
+            </a>
+
+        </div>
+
+    </section>
+
+    <!-- J&J -->
+    <section class="container jj-preview-container">
+
+        <div class="section-header-block">
+            <h2>J &amp; J</h2>
+            <p class="meta"><em>12.18.25 ♡</em></p>
+        </div>
+
+        <hr>
+
+        <div class="memories-washi-grid jj-grid">
+
+            <div class="washi-card rot-left">
+                <div class="washi-tape"></div>
+                <img src="j2.jpg" alt="">
+            </div>
+
+            <div class="washi-card rot-center">
+                <div class="washi-tape"></div>
+                <img src="j1.jpg" alt="">
+            </div>
+
+            <div class="washi-card rot-right">
+                <div class="washi-tape"></div>
+                <img src="j3.jpg" alt="">
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+<!-- Portfolio -->
+<section class="container bottom-content-section">
+
+    <div class="section-header-block">
+        <h2>My Digital Art Portfolio</h2>
+        <p class="meta">
+            <em>A few of my favourite Urian Publication contributions</em>
+        </p>
+    </div>
+
+    <hr>
+
+    <div class="interactive-grid" id="home-portfolio-grid"></div>
+
+    <div class="read-more-wrapper">
+        <a href="portfolio.html" class="home-read-more-btn">
+            See More →
+        </a>
+    </div>
+
+</section>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <div class="footer-left">
+        <p>Instructor: Lee Angela Yu Garnica</p>
+        <p>Information Assurance and Security</p>
+      </div>
+      
+      <div class="footer-right">
+        <p>&copy; 2026 Juliana Isabel Mayo</p>
+        <p>A.Y. 2025–2026 | Father Saturnino Urios University</p>
+      </div>
+    </div>
+  </footer>
+
+  <div id="welcomeModal" class="modal-overlay">
+    <div class="modal-card">
+      <h2>Welcome Back!</h2>
+      <p>Welcome to Mayo's Blog, Admin!</p>
+      <button onclick="closeWelcomeModal()" class="modal-btn">Continue</button>
+    </div>
+  </div>
+
+  <script>
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const authBtn = document.getElementById('auth-btn');
+
+    if (isLoggedIn) {
+      authBtn.textContent = 'Logout';
+      authBtn.removeAttribute('href');
+      authBtn.onclick = function() {
+        localStorage.removeItem('isLoggedIn');
+        window.location.reload();
+      };
+    }
+
+    if (localStorage.getItem('showWelcome') === 'true') {
+      document.getElementById('welcomeModal').style.display = 'flex';
+      localStorage.removeItem('showWelcome');
+    }
+
+    function closeWelcomeModal() {
+      document.getElementById('welcomeModal').style.display = 'none';
+    }
+
+    const savedAvatar = localStorage.getItem('profileAvatar');
+    if (savedAvatar) {
+      document.getElementById('teaser-avatar').src = savedAvatar;
+    }
+
+    const savedLabels = localStorage.getItem('profileLabels');
+    if (savedLabels) {
+      document.getElementById('teaser-labels-container').innerHTML = savedLabels;
+    }
+
+    function loadBlogTeaser() {
+      const posts = JSON.parse(localStorage.getItem('blogPosts_v4')) || [];
+      const publishedPosts = posts.filter(p => p.status !== 'draft' && p.status !== 'archived');
+      const teaserContainer = document.getElementById('home-blog-teaser');
+
+      if (publishedPosts.length > 0) {
+        publishedPosts.sort((a, b) => b.id - a.id);
+        const newestPost = publishedPosts[0];
+
+        const firstLine = newestPost.content
+        .split(/<br\s*\/?>/i)[0]      
+        .replace(/<[^>]*>/g, "")    
+        .trim();
+
+        const snippet = `<p>${firstLine}</p>`;
+
+        teaserContainer.innerHTML = `
+          <h1>${newestPost.title}</h1>
+          <p class="meta"><em>By Juliana Isabel Mayo | ${newestPost.date}</em></p>
+          <hr>  
+          <article>
+            <div id="full-essay" class="article-text">
+              ${snippet}
+            </div>
+          </article>
+          <div class="read-more-wrapper">
+            <a href="blog.html" class="home-read-more-btn">Read More &rarr;</a>
+          </div>
+        `;
+      } else {
+        teaserContainer.innerHTML = `
+          <h2>Blog Posts</h2>
+          <p class="meta"><em>Check back soon for updates.</em></p>
+          <hr>  
+          <article>
+            <p>No posts have been published yet.</p>
+          </article>
+          <div class="read-more-wrapper">
+            <a href="blog.html" class="home-read-more-btn">Visit Blog &rarr;</a>
+          </div>
+        `;
+      }
+    }
+
+    function loadPortfolioTeaser() {
+      const portfolioGrid = document.getElementById('home-portfolio-grid');
+      const defaultPortfolio = [
+        { title: "38 Years of Totoro", image: "totoro.jpg", link: "https://www.facebook.com/UrianPublication/posts/pfbid02AXKn1BNnJp8mUgpVHCdSLhD1QkuAJj8RBkAGs9YtXR2NFuCmYoeek1EWbzjqvAAol" },
+        { title: "FSUU Gameboard Map", image: "fsuu.jpg", link: "https://www.facebook.com/UrianPublication/posts/pfbid0JmSuPgWG9CXgvrwwoS4gqSRJUBV3xcMVYCaLwyJv6kXitVQFsdrnn9Hb6kKnhsWKl" },
+        { title: "Lunar New Year 2025", image: "cny.jpg", link: "https://www.facebook.com/UrianPublication/posts/pfbid02VffRYU8KCkhNxRVQRGVwzkNtvYJdHuzsfLuKnp5jpvqMHU8k8udY4txC5WARjM7rl" },
+        { title: "Tacloban Opinion Piece", image: "tacloban.jpg", link: "https://www.facebook.com/UrianPublication/posts/pfbid02B7ciCpN1pQVgR94gQ8n1VR18RxZZZSDp9AeJkBgFvSrufqbnkNcCiXSdkwYsGgxLl" }
+      ];
+
+      const portfolioItems = JSON.parse(localStorage.getItem('portfolioItems')) || defaultPortfolio;
+      portfolioGrid.innerHTML = '';
+
+      portfolioItems.slice(0, 4).forEach(item => {
+        portfolioGrid.innerHTML += `
+          <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="interactive-card">
+            <img src="${item.image}" alt="${item.title}">
+            <div class="interactive-overlay">
+              <span class="interactive-title">${item.title}</span>
+              <span class="interactive-sub">View on Facebook &rarr;</span>
+            </div>
+          </a>
+        `;
+      });
+    }
+
+    loadBlogTeaser();
+    loadPortfolioTeaser();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Profile - Mayo's Blogsite</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav>
+    <img src="logo.png" alt="Blog Logo" class="nav-logo">
+    <a href="index.html">Home</a>
+    <a href="blog.html">Blog</a>
+    <a href="profile.html" class="active">About Me</a>
+    <a href="portfolio.html">Portfolio</a>
+    <a href="login.html" id="auth-btn" class="logout-btn">Admin Login</a>
+  </nav>
+
+  <main class="profile-page-wrapper">
+    <div class="container profile-card-container">
+      <div class="profile-card">
+        <a href="https://github.com/imamiam" target="_blank" rel="noopener noreferrer" class="profile-washi-card rot-left">
+          <div class="washi-tape"></div>
+          <img src="mayo.jpg" alt="Juliana Isabel Mayo" class="profile-img-washi">
+        </a>  
+        
+        <div class="profile-info">
+          <h3>Juliana Isabel Mayo</h3>
+          
+          <div class="profile-labels">
+            <p><strong>Course / Year:</strong> BSIT, 3rd Year</p>
+            <p><strong>Subject:</strong> Information Assurance and Security</p>
+          </div>
+
+          <div id="profile-bio-container" class="profile-bio">
+            <p>Hello! Welcome to my personal blog site. I am a 3rd-year IT student currently studying at Father Saturnino Urios University.</p>
+            <p>I have also been an active member of the Urian Publication since my first year, having served as creatives head during my second year. Throughout my stay in the publication, I have created numerous digital artworks for our campus publications and official releases.</p>
+            <p>This blog site was created as a course project to showcase secure design analysis via a 1,000-word essay, exploring how AI coding tools and rapid prototyping intersect with developer responsibilities under Philippine Data Privacy laws (RA No. 10173).</p>
+          </div>
+
+          <div id="admin-profile-panel" style="display: none; margin-top: 1.5rem;">
+            <button onclick="openProfileModal()" class="home-read-more-btn" style="border:none; cursor:pointer; font-family: 'Segoe UI', sans-serif;">Edit Bio</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <div class="footer-left">
+        <p>Instructor: Lee Angela Yu Garnica</p>
+        <p>Information Assurance and Security</p>
+      </div>
+      
+      <div class="footer-right">
+        <p>&copy; 2026 Juliana Isabel Mayo</p>
+        <p>A.Y. 2025–2026 | Father Saturnino Urios University</p>
+      </div>
+    </div>
+  </footer>
+
+  <div id="profileModal" class="modal-overlay">
+    <div class="modal-card cms-modal">
+      <h2>Edit Bio</h2>
+      
+      <div class="editor-container">
+        <div class="editor-toolbar" id="toolbar">
+          <button type="button" data-cmd="bold" onclick="formatDoc('bold')" title="Bold"><b>B</b></button>
+          <button type="button" data-cmd="italic" onclick="formatDoc('italic')" title="Italic"><i>I</i></button>
+          <button type="button" data-cmd="underline" onclick="formatDoc('underline')" title="Underline"><u>U</u></button>
+          <span class="divider"></span>
+          <button type="button" data-cmd="justifyLeft" onclick="formatDoc('justifyLeft')" title="Align Left">&#x21E4;</button>
+          <button type="button" data-cmd="justifyCenter" onclick="formatDoc('justifyCenter')" title="Align Center">&#x2194;</button>
+          <button type="button" data-cmd="justifyRight" onclick="formatDoc('justifyRight')" title="Align Right">&#x21E5;</button>
+          <button type="button" data-cmd="justifyFull" onclick="formatDoc('justifyFull')" title="Justify">&#x2261;</button>
+          <span class="divider"></span>
+          <button type="button" onclick="formatDoc('formatBlock', 'H1')" title="Heading 1">H1</button>
+          <button type="button" onclick="formatDoc('formatBlock', 'H2')" title="Heading 2">H2</button>
+          <button type="button" onclick="formatDoc('formatBlock', 'H3')" title="Heading 3">H3</button>
+          <button type="button" onclick="formatDoc('formatBlock', 'P')" title="Paragraph">P</button>
+          <span class="divider"></span>
+          <button type="button" data-cmd="insertUnorderedList" onclick="formatDoc('insertUnorderedList')" title="Bullet List">•</button>
+          <button type="button" data-cmd="insertOrderedList" onclick="formatDoc('insertOrderedList')" title="Number List">1.</button>
+        </div>
+        <div id="profileContentEditor" contenteditable="true" class="rich-text-editor" placeholder="Edit your bio here..."></div>
+      </div>
+      
+      <div class="modal-actions">
+        <button onclick="saveProfile()" class="modal-btn">Save Bio</button>
+        <button onclick="closeProfileModal()" class="modal-btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const authBtn = document.getElementById('auth-btn');
+    const adminProfilePanel = document.getElementById('admin-profile-panel');
+
+    if (isLoggedIn) {
+      authBtn.textContent = 'Logout';
+      authBtn.removeAttribute('href');
+      authBtn.onclick = function() {
+        localStorage.removeItem('isLoggedIn');
+        window.location.reload();
+      };
+      adminProfilePanel.style.display = 'block';
+    }
+
+    const defaultBio = `
+      <p>Hello! Welcome to my personal blog site. I am a 3rd-year IT student currently studying at Father Saturnino Urios University.</p>
+      <p>I have also been an active member of the Urian Publication since my first year, having served as creatives head during my second year. Throughout my stay in the publication, I have created numerous digital artworks for our campus publications and official releases.</p>
+      <p>This blog site was created as a course project to showcase secure design analysis via a 1,000-word essay, exploring how AI coding tools and rapid prototyping intersect with developer responsibilities under Philippine Data Privacy laws (RA No. 10173).</p>
+    `;
+
+    let currentBio = localStorage.getItem('profileBio') || defaultBio;
+    document.getElementById('profile-bio-container').innerHTML = currentBio;
+
+    const editor = document.getElementById('profileContentEditor');
+    const toolbarButtons = document.querySelectorAll('.editor-toolbar button[data-cmd]');
+
+    function formatDoc(cmd, value=null) {
+      document.execCommand(cmd, false, value);
+      editor.focus();
+      updateToolbarActiveStates();
+    }
+
+    function updateToolbarActiveStates() {
+      toolbarButtons.forEach(btn => {
+        const cmd = btn.getAttribute('data-cmd');
+        if (cmd && document.queryCommandState(cmd)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    editor.addEventListener('keyup', updateToolbarActiveStates);
+    editor.addEventListener('mouseup', updateToolbarActiveStates);
+    editor.addEventListener('click', updateToolbarActiveStates);
+
+    function openProfileModal() {
+      document.getElementById('profileModal').style.display = 'flex';
+      editor.innerHTML = currentBio;
+      editor.focus();
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').style.display = 'none';
+    }
+
+    function saveProfile() {
+      let content = editor.innerHTML.trim();
+      if(content === '' || content === '<br>') {
+        alert("Bio cannot be empty!");
+        return;
+      }
+      currentBio = content;
+      localStorage.setItem('profileBio', currentBio);
+      document.getElementById('profile-bio-container').innerHTML = currentBio;
+      closeProfileModal();
+    }
+  </script>
+
+</body>
+</html>
