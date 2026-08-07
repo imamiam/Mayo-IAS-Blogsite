@@ -8,6 +8,31 @@
 </head>
 <body>
 
+<div id="page-loader">
+    <div class="loader-content">
+
+        <div class="loader-icons">
+
+            <span class="e1">💫</span>
+            <span class="e2">💞</span>
+            <span class="e3">✨</span>
+            <span class="e4">🌺</span>
+
+            <span class="letter-wrapper">
+                <span class="letter">💌</span>
+                <span class="heart">💖</span>
+            </span>
+
+            <span class="e6">🌺</span>
+            <span class="e7">✨</span>
+            <span class="e8">💞</span>
+            <span class="e9">💫</span>
+
+        </div>
+
+    </div>
+</div>
+
   <nav>
     <img src="logo.png" alt="Blog Logo" class="nav-logo">
     <a href="index.html" class="active">Home</a>
@@ -276,6 +301,22 @@
 
     
   </script>
+
+  <script>
+
+window.addEventListener("load", () => {
+
+    document.body.classList.add("loaded");
+
+    setTimeout(() => {
+        document
+            .getElementById("page-loader")
+            .classList.add("hide");
+    }, 100);
+
+});
+
+</script>
 
 </body>
 </html>

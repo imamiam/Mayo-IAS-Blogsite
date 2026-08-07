@@ -8,6 +8,8 @@
 </head>
 <body>
 
+<div id="page-loader"></div>
+
   <main class="center-body">
     <div class="container login-card">
       <h2 style="font-size: 2.2rem; margin-top: 0; border: none;">Mayo's Blog Login</h2>
@@ -54,6 +56,22 @@
       }
     });
   </script>
+
+  <script>
+
+window.addEventListener("load", () => {
+
+    document.body.classList.add("loaded");
+
+    setTimeout(() => {
+        document
+            .getElementById("page-loader")
+            .classList.add("hide");
+    }, 100);
+
+});
+
+</script>
 
 </body>
 </html>
