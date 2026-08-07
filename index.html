@@ -143,11 +143,24 @@
     </div>
   </div>
 
-  <script>
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    const authBtn = document.getElementById('auth-btn');
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    if (isLoggedIn) {
+      <script>
+      const SUPABASE_URL = "https://hwzctepyvvgmhmvmgxgr.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_iMUa4IY_XTZ-uuqMLVzqtA_znm232Jt";
+
+      const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+      );
+
+      </script>
+
+      <script>
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      const authBtn = document.getElementById('auth-btn');
+
+      if (isLoggedIn) {
       authBtn.textContent = 'Logout';
       authBtn.removeAttribute('href');
       authBtn.onclick = function() {
@@ -175,26 +188,24 @@
       document.getElementById('teaser-labels-container').innerHTML = savedLabels;
     }
 
-    function loadBlogTeaser() {
+    
+    async function loadBlogTeaser() {
 
-    const teaserContainer = document.getElementById('home-blog-teaser');
+    const teaserContainer = document.getElementById("home-blog-teaser");
 
-    const defaultPosts = [
-        {
-            id: 1786029996753,
-            title: "Principles over Speed",
-            date: "August 6, 2026",
-            tags: "Information Assurance and Security",
-            status: "published",
-            content: `<p>A team of three university students built a mobile and web application in under 72 hours for a weekend hackathon. Within a month, over a dozen campus organizations adopted the tool, exposing student names, phone numbers, GCash screenshots, ID photos, and private chats to severe vulnerabilities.</p>`
-        }
-    ];
+    let posts = [];
 
-    let posts = JSON.parse(localStorage.getItem('blogPosts_v4'));
+    const { data, error } = await supabaseClient
+        .from("posts")
+        .select("*")
+        .order("id", { ascending: false });
 
-    if (!posts || posts.length === 0) {
-        posts = defaultPosts;
+    if (error) {
+        console.error(error);
+        return;
     }
+
+    posts = data;
 
     const publishedPosts = posts.filter(p => p.status !== 'draft' && p.status !== 'archived');
 
@@ -202,12 +213,10 @@
         publishedPosts.sort((a, b) => b.id - a.id);
         const newestPost = publishedPosts[0];
 
-        const firstLine = newestPost.content
-        .split(/<br\s*\/?>/i)[0]      
-        .replace(/<[^>]*>/g, "")    
-        .trim();
+        const firstParagraph =
+        newestPost.content.match(/<p[^>]*>.*?<\/p>/i)?.[0] || "<p></p>";
 
-        const snippet = `<p>${firstLine}</p>`;
+        const snippet = firstParagraph;
 
         teaserContainer.innerHTML = `
           <h1>${newestPost.title}</h1>
@@ -264,6 +273,8 @@
 
     loadBlogTeaser();
     loadPortfolioTeaser();
+
+    
   </script>
 
 </body>
