@@ -238,10 +238,24 @@
         publishedPosts.sort((a, b) => b.id - a.id);
         const newestPost = publishedPosts[0];
 
-        const firstParagraph =
-        newestPost.content.match(/<p[^>]*>.*?<\/p>/i)?.[0] || "<p></p>";
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newestPost.content;
 
-        const snippet = firstParagraph;
+        let snippet = '';
+        const pTags = tempDiv.querySelectorAll('p');
+        for (let p of pTags) {
+          if (p.textContent.trim().length > 0) {
+            snippet = p.outerHTML;
+            break;
+          }
+        }
+
+        if (!snippet) {
+          const rawHtml = tempDiv.innerHTML.trim();
+          const breakIndex = rawHtml.search(/<br\s*[\/]?>|<\/div>|<\/h[1-6]>/i);
+          const firstChunk = breakIndex !== -1 ? rawHtml.substring(0, breakIndex) : rawHtml;
+          snippet = `<p>${firstChunk}</p>`;
+        }
 
         teaserContainer.innerHTML = `
           <h1>${newestPost.title}</h1>
