@@ -1355,3 +1355,9 @@ footer {
   background-color: #a33b3b; 
   transform: translateY(-2px);
 }
+
+.hanging-indent {
+  padding-left: 2.5em !important;
+  text-indent: -2.5em !important;
+  margin-bottom: 0.8rem;
+}

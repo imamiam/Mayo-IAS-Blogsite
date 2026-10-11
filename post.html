@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Article - Mayo's Blogsite</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="page-loader">
+    <div class="loader-content">
+      <div class="loader-icons">
+        <span class="e1">💫</span>
+        <span class="e2">💞</span>
+        <span class="e3">✨</span>
+        <span class="e4">🌺</span>
+        <span class="letter-wrapper">
+          <span class="letter">💌</span>
+          <span class="heart">💖</span>
+        </span>
+        <span class="e6">🌺</span>
+        <span class="e7">✨</span>
+        <span class="e8">💞</span>
+        <span class="e9">💫</span>
+      </div>
+    </div>
+  </div>
+
+  <nav>
+    <img src="logo.png" alt="Blog Logo" class="nav-logo">
+    <a href="index.html">Home</a>
+    <a href="blog.html" class="active">Blog</a>
+    <a href="profile.html">About Me</a>
+    <a href="portfolio.html">Portfolio</a>
+    <a href="login.html" id="auth-btn" class="logout-btn">Admin Login</a>
+  </nav>
+
+  <main class="blog-page-wrapper">
+    <div id="single-post-container" class="container dynamic-post-card" style="margin-top: 2rem;">
+      <p style="text-align:center; color:#8c5a68; padding: 2rem;">Loading article...</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <div class="footer-left">
+        <p>Instructor: Lee Angela Yu Garnica</p>
+        <p>Information Assurance and Security</p>
+      </div>
+      <div class="footer-right">
+        <p>&copy; 2026 Juliana Isabel Mayo</p>
+        <p>A.Y. 2025–2026 | Father Saturnino Urios University</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://hwzctepyvvgmhmvmgxgr.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_iMUa4IY_XTZ-uuqMLVzqtA_znm232Jt";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const authBtn = document.getElementById('auth-btn');
+
+    if (isLoggedIn) {
+      authBtn.textContent = 'Logout';
+      authBtn.removeAttribute('href');
+      authBtn.onclick = function() {
+        localStorage.removeItem('isLoggedIn');
+        window.location.reload();
+      };
+    }
+
+    async function loadSinglePost() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const postId = urlParams.get('id');
+      const container = document.getElementById('single-post-container');
+
+      if (!postId) {
+        container.innerHTML = `<p style="text-align:center; color:#8c5a68; padding: 2rem;">No article selected. <a href="blog.html" class="home-read-more-btn" style="margin-top:1rem; display:inline-block;">Return to all posts</a></p>`;
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from("posts")
+        .select("*")
+        .eq("id", postId)
+        .single();
+
+      if (error || !data) {
+        container.innerHTML = `<p style="text-align:center; color:#8c5a68; padding: 2rem;">Article not found. <a href="blog.html" class="home-read-more-btn" style="margin-top:1rem; display:inline-block;">Return to all posts</a></p>`;
+        return;
+      }
+
+      document.title = `${data.title} - Mayo's Blogsite`;
+
+      container.innerHTML = `
+        <div class="dynamic-post-content">
+          <span class="blog-tag">${data.tags || 'Journal'}</span>
+          <h1>${data.title}</h1>
+          <p class="meta"><em>By Juliana Isabel Mayo | ${data.date}</em></p>
+          <hr>
+          <div class="article-text">${data.content}</div>
+          <div style="margin-top: 2.5rem;">
+            <a href="blog.html" class="home-read-more-btn">&larr; Back to all posts</a>
+          </div>
+        </div>
+      `;
+    }
+
+    loadSinglePost();
+
+    window.addEventListener("load", () => {
+      document.body.classList.add("loaded");
+      setTimeout(() => {
+        document.getElementById("page-loader").classList.add("hide");
+      }, 100);
+    });
+  </script>
+</body>
+</html>

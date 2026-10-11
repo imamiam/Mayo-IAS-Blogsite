@@ -8,8 +8,6 @@
 </head>
 <body>
 
-<body>
-
 <div id="page-loader"></div>
 
 <header>
@@ -86,6 +84,7 @@
           <span class="divider"></span>
           <button type="button" data-cmd="insertUnorderedList" onclick="formatDoc('insertUnorderedList')" title="Bullet List">•</button>
           <button type="button" data-cmd="insertOrderedList" onclick="formatDoc('insertOrderedList')" title="Number List">1.</button>
+          <button type="button" onclick="toggleHangingIndent()" title="Hanging Indent (References)">&#8677; Hang</button>
         </div>
         <div id="postContentEditor" contenteditable="true" class="rich-text-editor" placeholder="Type your post here..."></div>
       </div>
@@ -112,12 +111,11 @@
 
 <script>
     const SUPABASE_URL = "https://hwzctepyvvgmhmvmgxgr.supabase.co";
-
     const SUPABASE_KEY = "sb_publishable_iMUa4IY_XTZ-uuqMLVzqtA_znm232Jt";
 
     const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
+      SUPABASE_URL,
+      SUPABASE_KEY
     );
 
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -136,20 +134,20 @@
 
     let posts = [];
 
-  async function loadPosts() {
-    const { data, error } = await supabaseClient
-        .from("posts")
-        .select("*")
-        .order("id", { ascending: false });
+    async function loadPosts() {
+      const { data, error } = await supabaseClient
+          .from("posts")
+          .select("*")
+          .order("id", { ascending: false });
 
-    if (error) {
-        console.error(error);
-        return;
+      if (error) {
+          console.error(error);
+          return;
+      }
+
+      posts = data || [];
+      renderPosts();
     }
-
-    posts = data;
-    renderPosts();
-}
 
     let editingPostId = null;
     let deletingPostId = null;
@@ -178,17 +176,37 @@
           <button class="delete-btn" onclick="promptDelete(${post.id})">Delete Post</button>
         ` : '';
 
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = post.content;
+
+        let snippet = '';
+        const pTags = tempDiv.querySelectorAll('p');
+        for (let p of pTags) {
+          if (p.textContent.trim().length > 0) {
+            snippet = p.outerHTML;
+            break;
+          }
+        }
+
+        if (!snippet) {
+          const rawHtml = tempDiv.innerHTML.trim();
+          const breakIndex = rawHtml.search(/<br\s*[\/]?>|<\/div>|<\/h[1-6]>/i);
+          const firstChunk = breakIndex !== -1 ? rawHtml.substring(0, breakIndex) : rawHtml;
+          snippet = `<p>${firstChunk}</p>`;
+        }
+
         feed.innerHTML += `
           <div class="container dynamic-post-card">
             <div class="dynamic-post-content">
               ${statusBadge}
               <span class="blog-tag">${post.tags || 'Journal'}</span>
-              <h1>${post.title}</h1>
+              <h1><a href="post.html?id=${post.id}" style="text-decoration:none; color:inherit;">${post.title}</a></h1>
               <p class="meta"><em>By Juliana Isabel Mayo | ${post.date}</em></p>
               <hr>
-              <div class="article-text">${post.content}</div>
+              <div class="article-text">${snippet}</div>
               
-              <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+              <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 1.5rem;">
+                <a href="post.html?id=${post.id}" class="home-read-more-btn" style="text-decoration:none;">Read Article &rarr;</a>
                 ${adminControls}
               </div>
             </div>
@@ -215,6 +233,31 @@
           btn.classList.remove('active');
         }
       });
+    }
+
+    function toggleHangingIndent() {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return;
+
+      let node = selection.anchorNode;
+      
+      while (node && node !== editor && !['P', 'DIV', 'LI', 'BLOCKQUOTE'].includes(node.nodeName)) {
+        node = node.parentNode;
+      }
+
+      if (node === editor) {
+        document.execCommand('formatBlock', false, 'p');
+        node = window.getSelection().anchorNode;
+        while (node && node !== editor && node.nodeName !== 'P') {
+          node = node.parentNode;
+        }
+      }
+
+      if (node && node !== editor) {
+        node.classList.toggle('hanging-indent');
+      }
+
+      editor.focus();
     }
 
     editor.addEventListener('keyup', updateToolbarActiveStates);
@@ -292,108 +335,97 @@
     }
 
     async function confirmDelete() {
+      if (!deletingPostId) return;
 
-    if (!deletingPostId) return;
+      const { error } = await supabaseClient
+          .from("posts")
+          .delete()
+          .eq("id", deletingPostId);
 
-    const { error } = await supabaseClient
-        .from("posts")
-        .delete()
-        .eq("id", deletingPostId);
+      if (error) {
+          console.error(error);
+          alert("Failed to delete post.");
+          return;
+      }
 
-    if (error) {
-        console.error(error);
-        alert("Failed to delete post.");
-        return;
+      closeDeleteModal();
+      loadPosts();
     }
-
-    closeDeleteModal();
-    loadPosts();
-}
 
     async function savePost() {
+      const title = document.getElementById("postTitle").value.trim();
+      const tags = document.getElementById("postTags").value.trim();
+      const status = document.getElementById("postStatus").value;
+      let content = editor.innerHTML.trim();
 
-    const title = document.getElementById("postTitle").value.trim();
-    const tags = document.getElementById("postTags").value.trim();
-    const status = document.getElementById("postStatus").value;
-    let content = editor.innerHTML.trim();
+      if (!title || content === "" || content === "<br>") {
+          alert("Title and Content are required!");
+          return;
+      }
 
-    if (!title || content === "" || content === "<br>") {
-        alert("Title and Content are required!");
-        return;
+      if (
+          !content.startsWith("<p>") &&
+          !content.startsWith("<h") &&
+          !content.startsWith("<img>")
+      ) {
+          content = `<p>${content}</p>`;
+      }
+
+      if (editingPostId) {
+          const { error } = await supabaseClient
+              .from("posts")
+              .update({
+                  title,
+                  tags,
+                  status,
+                  content
+              })
+              .eq("id", editingPostId);
+
+          if (error) {
+              console.error(error);
+              alert("Failed to update post.");
+              return;
+          }
+      } else {
+          const { error } = await supabaseClient
+              .from("posts")
+              .insert([{
+                  id: Date.now(),
+                  title,
+                  date: new Date().toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric"
+                  }),
+                  tags,
+                  status,
+                  content
+              }]);
+
+          if (error) {
+              console.error(error);
+              alert("Failed to create post.");
+              return;
+          }
+      }
+
+      closePostModal();
+      loadPosts();
     }
-
-    if (
-        !content.startsWith("<p>") &&
-        !content.startsWith("<h") &&
-        !content.startsWith("<img>")
-    ) {
-        content = `<p>${content}</p>`;
-    }
-
-    if (editingPostId) {
-
-        const { error } = await supabaseClient
-            .from("posts")
-            .update({
-                title,
-                tags,
-                status,
-                content
-            })
-            .eq("id", editingPostId);
-
-        if (error) {
-            console.error(error);
-            alert("Failed to update post.");
-            return;
-        }
-
-    } else {
-
-        const { error } = await supabaseClient
-            .from("posts")
-            .insert([{
-                id: Date.now(),
-                title,
-                date: new Date().toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric"
-                }),
-                tags,
-                status,
-                content
-            }]);
-
-        if (error) {
-            console.error(error);
-            alert("Failed to create post.");
-            return;
-        }
-
-    }
-
-    closePostModal();
-    loadPosts();
-}
 
     loadPosts();
-  </script>
+</script>
   
-  <script>
-
+<script>
 window.addEventListener("load", () => {
-
     document.body.classList.add("loaded");
-
     setTimeout(() => {
         document
             .getElementById("page-loader")
             .classList.add("hide");
     }, 100);
-
 });
-
 </script>
 
 </body>
